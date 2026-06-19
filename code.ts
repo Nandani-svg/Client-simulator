@@ -133,7 +133,7 @@ function rgToHex(c: RGB): string {
   if(node.type === 'FRAME' || node.type === 'GROUP') profile.frameCount++;
   if(node.type === 'INSTANCE' || node.type === 'COMPONENT') || node.type === 'COMPONENT_SET') profile.componentCount++;
     }
-    
+
     profile.colorCount = colorSet.size;
     if (colorSet.size > 0) {
         const colors = Array.from(colorSet);
@@ -144,7 +144,35 @@ function rgToHex(c: RGB): string {
     return profile;
 }
     
-    function severitylabel(s: string): string {
+   const feedbackGenerators: Array<(p: DesignProfile) => FeedbackItem = | null> = [ (p) => {
+    (p) => {
+        if (p.hasLogo) {
+            const name = p.logoNodeName || 'this logo';
+            return {
+              id: uid(), text: `"${name}" needs to be at least 30% bigger. It's getting completely lost. Make it command attention.`,
+                      category: 'Logo Size', severity: 'change request', nodeId: p.logoNodeId, nodeName: p.logoNodeName,
+            };
+        }
+     return {
+       id: uid(), text: 'Can we make the logo bigger? It should be the first thing people see. Like, twice as big.',
+       category: 'Logo Size', severity: 'change request',
+     };
+    },
+    (p) => {
+        if(p.colorCount > 0 && p.sampleColorsHex) {
+            return {
+              id: uid(), text: `I'm thinking ${p.sampleColorHex} isn't quite right. What if we tried blue? #0066FF is more trustworthy.`,    
+           category: 'Color', severity: 'change request',
+            };
+        }
+        return {
+            id: uid(), text: 'The palette feels safe. Can we try a vibrant blue as the primary?',
+            category: 'Color', severity: 'change request',
+        };
+    },
+];
+
+function severitylabel(s: string): string {
         switch (s) {
             case 'panic': return '🔴';
             case 'change request': return '🟡';
