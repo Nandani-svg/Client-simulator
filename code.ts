@@ -235,8 +235,39 @@ return {
     category: 'Typography', severity: 'change request',
 };
 },
+   (p) => {
+    if(p.hasButtons) {
+        const label = p.buttonLabels[0] || 'this button';
+        return {
+            id: uid(), text: `"${label}" — is this the primary action? It doesn't feel prominent enough.`,
+            category: 'Buttons', severity: 'change request',
+        };
+    }
+    return {
+        id: uid(), text: 'Where\'s the call to action? We need a prominent CTA.',
+        category: 'Buttons', severity: 'panic',
+    };
+},
+() => ({
+     id: uid(), text: 'Does this work on mobile? I pulled it up on my iPhone and everything overlaps.',
+       category: 'Mobile', severity: 'panic',
+}),
+(p) => {
+    if(p.hasImages) {
+        return {
+            id: uid(), text: 'These images feel stock-photo-y. Can we use original photography instead?',
+            category: 'Images', severity: 'change request',
+        };
+    }
+    if(p.hasIcons) {
+        return {
+             id: uid(), text: 'Icons are inconsistent — some outlined, some filled. Pick one style.',
+             category: 'Icons', severity: 'nitpick',
+        };
+    }
+    return null;
+},
    ];
-
 function severitylabel(s: string): string {
         switch (s) {
             case 'panic': return '🔴';
