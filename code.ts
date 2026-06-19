@@ -49,6 +49,54 @@ function rgToHex(c: RGB): string {
       return `#${r}${g}${b}`.toUpperCase();
     }
     
+    function getDesignProfile(): DesignProfile {
+     const selection = figma.currentPage.selection;
+    const allNodes: SceneNode[] = [];
+    
+    const source = selection.length > 0 ? selection : figma.currentPage.children;
+    for (const node of source) {
+      allNodes.push(node);
+      if('children' in node) {  
+    for (const child of ( node as ChildrenMixin).children) (
+    allNodes.push(child);
+      }
+    }
+    }
+    
+    const profile: DesignProfile = {
+        hasLogo: false,
+        logoNodeName: '',
+        logoNodeId: '',
+        textCount: 0,
+        textSnippets: [],
+        hasImage: false,
+        colorCount: 0,
+        sampleColors: '',
+        sampleColorsHex: '',
+        frameCount: 0,
+        componentCount: 0,
+        hasMultiplePages: figma.root.children.length > 1,
+        nodeCount: allNodes.length,
+        hasButtons: false,
+        buttonsLabels: [],
+        hasIcons: false,
+        hasGradients: false,
+    };
+    
+    const colorSet = new Set<string>();
+
+
+
+    profile.colorCount = colorSet.size;
+    if (colorSet.size > 0) {
+        const colors = Array.from(colorSet);
+        profile.sampleColor = colors[0];
+        profile.sampleColorsHex = colors[0];
+    }
+
+    return profile;
+}
+    
     function severitylabel(s: string): string {
         switch (s) {
             case 'panic': return '🔴';
