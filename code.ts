@@ -195,7 +195,27 @@ function rgToHex(c: RGB): string {
          cateogory: 'Layout', severity: 'change request',
     };
 },
-
+() => ({
+  id: uid(), text: 'There is WAY too much whitespace. Can we condense things? People scroll too much.',
+  category: 'Whitespace',severity:'nitpick',
+}),
+(p) => {
+    if(p.componetCount > 0) {
+        return {
+             id: uid(), text: 'These components don\'t match our design system. Check the brand guidelines.',
+            category: 'Branding', severity: 'panic',
+        };
+    }
+    return{
+        id: uid(), text: 'Does this follow our brand guidelines? I don\'t see our visual identity anywhere.',
+        category: 'Branding', severity: 'panic',
+    };
+},
+() => ({
+    id: uid(), text: 'My 12-year-old nephew made a website in school that looks identical to this. Just saying.'
+    category: 'My Nephew', severity: 'nitpick',
+}),
+   ];
 function severitylabel(s: string): string {
         switch (s) {
             case 'panic': return '🔴';
