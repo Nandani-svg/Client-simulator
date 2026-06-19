@@ -383,3 +383,61 @@ function makeStickyNote(item: FeedbackItem, x: number, y: number): StickyNoteDat
     
       return { frame, textNode: body, barNode: bar, severity, status };
     }
+
+    function clearAnnotations(): void {
+        for (const { frame } of placedNodes.values()) {
+            if (!frame.removed) frame.remove();
+        }
+        placedNodes.clear();
+    }
+
+function createAnnotations(items: FeedbackItem[]): void {
+    const start = getStartPosition();
+    const spacing = 160;
+
+    for(let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const data = makeStickyNote(item, start.x, start.y + i * spacing);
+
+        if(item.nodeId) {
+            const relatedNode = figma.getNodeById(item.nodeId);
+            if(relatedNode && 'absoluteBoundingBox' in relatedNode) {
+                const b = (relatedNode as SceneNode).absoluteBoundingBox;
+                if (b) {
+                    const line = figma.createLine();
+                    line.x = b.x + b.width / 2;
+                    line.y = b.y + b.height / 2;
+                    const endX = data.frame.x;
+                    const endY = data.frame.y + 60;
+                    const dx = endX - line.x;
+                    const dy = endY - line.y;
+                    const len = Math.sqrt(dx * dx + dy * dy);
+                     line.resize(len, 0);
+                              line.rotation = (Math.atan2(dy, dx) * 180) / Math.PI;
+                              line.strokeWeight = 1;
+                              line.strokes = [{ type: 'SOLID', color: { r: 1, g: 0.6, b: 0 }, opacity: 0.3 }];
+                              line.name = `connector_${item.id}`;
+                              line.setPluginData('feedbackId', item.id);
+                            }
+                          }
+                        }
+                    
+                        placedNodes.set(item.id, data);
+                      }
+                    }
+
+function broadcastItem(): void {
+    const items: FeedbackItem[] = [];
+    for (const [id,data] of placedNodes) {
+        const frame = data.frame;
+        if (frame.removed) continue;
+        items.push({
+            id,
+            text: frame.getPluginData('text') || '',
+            category: frame.getPluginData('category') || '',
+             severity: (frame.getPluginData('severity') || 'change request') as FeedbackItem['severity'],
+             status: (frame.getPluginData('status') || 'active') as FeedbackItem['status'],
+        });
+    }
+    figma.ui.postMessage({ type: 'feedback', items });
+}
