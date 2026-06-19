@@ -85,7 +85,28 @@ function rgToHex(c: RGB): string {
     
     const colorSet = new Set<string>();
 
+    for (const node of allNodes) {
+     const name = node.name.toLowerCase();
+    
+    if (name.includes('logo') || name.includes('brand') || name.includes('header-logo')) {
+        profile.hasLogo = true;
+        profile.logoNodeName = node.name;
+        profile.logoNodeId = node.id;
+    }
 
+    if (name.includes('button') || name.includes('btn') || name.includes('cta')) {
+        profile.hasButtons = true;
+        if (node.type === 'TEXT') {
+            profile.buttonsLabels.push((node as TextNode).characters);
+        } else {
+            profile.buttonsLabels.push(node.name);
+        }
+    }
+
+    if (name.includes('icon') || name.includes('svg') || name.includes('glyph')) {
+        profile.hasIcons = true;
+    }
+}
 
     profile.colorCount = colorSet.size;
     if (colorSet.size > 0) {
