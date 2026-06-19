@@ -267,8 +267,29 @@ return {
     }
     return null;
 },
+() => ({
+id: uid(), text: 'This color contrast fails WCAG AA. I checked. We\'re going to get sued.(Okay maybe not but fix it.)',
+category: 'Accessibility', severity: 'panic',
+}),
+() => ({
+id: uid(), text: 'Dave in sales wants the opposite of what marketing said. Can you make it work for both?',
+category: 'Confliciting Feedback', severity: 'panic',
+}),
    ];
-function severitylabel(s: string): string {
+
+function generateFeedback(profile: DesignProfile): FeedbackItem[] {
+const items: FeedbackItem[] = [];
+for (const generator of feedbackGenerators) {
+    const item = gen(profile);
+   if (item) {
+  if(!item.status) item.status = 'active';
+items.push(item);
+   }
+}
+return items;
+}
+
+   function severitylabel(s: string): string {
         switch (s) {
             case 'panic': return '🔴';
             case 'change request': return '🟡';
