@@ -215,7 +215,28 @@ function rgToHex(c: RGB): string {
     id: uid(), text: 'My 12-year-old nephew made a website in school that looks identical to this. Just saying.'
     category: 'My Nephew', severity: 'nitpick',
 }),
+   () => ({
+id: uid(), text: 'Apple\'s website does this exact thing but way better. Can we study what they do?',
+category: 'Competitor', severity: 'change request',
+}),
+() => ({
+    id: uid(), text: 'Can we add a live chat widget, dark mode, and turn this into a PWA while we\'re at it? Small ask.',
+    category: 'Scope Creep', severity: 'panic'
+}),
+(p) => {
+if(p.textCount > 3) {
+    return {
+       id: uid(), text: 'This font isn\'t working. Too playful for our audience. Try Inter or SF Pro.',  
+        category: 'Typography', severity: 'change request',
+    };
+}
+return {
+ id: uid(), text: 'The typography hierarchy is flat. Headlines don\'t look like headlines. Bump the size and weight.',
+    category: 'Typography', severity: 'change request',
+};
+},
    ];
+
 function severitylabel(s: string): string {
         switch (s) {
             case 'panic': return '🔴';
