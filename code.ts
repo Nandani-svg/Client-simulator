@@ -54,13 +54,14 @@ function rgToHex(c: RGB): string {
     const allNodes: SceneNode[] = [];
     
     const source = selection.length > 0 ? selection : figma.currentPage.children;
-    for (const node of source) {
-      allNodes.push(node);
-      if('children' in node) {  
-    for (const child of ( node as ChildrenMixin).children) (
-    allNodes.push(child);
-      }
+   for (const node of source) {
+    allNodes.push(node);
+    if ('children' in node) {
+        for (const child of (node as ChildrenMixin).children) {
+            allNodes.push(child);
+        }
     }
+}
     const profile: DesignProfile = {
         hasLogo: false,
         logoNodeName: '',
@@ -190,7 +191,7 @@ function rgToHex(c: RGB): string {
     }
     return {
          id: uid(), text: 'Things feel scattered. Can we tighten alignment and use a proper grid?',
-         cateogory: 'Layout', severity: 'change request',
+         category: 'Layout', severity: 'change request',
     };
 },
 () => ({
@@ -351,7 +352,7 @@ function makeStickyNote(item: FeedbackItem, x: number, y: number): StickyNoteDat
     frame.name = item.id;
     frame.x = x;
     frame.y = y;
-    frame.resize(noteW, noteW);
+    frame.resize(noteW, noteH);
     frame.cornerRadius = 8;
 
     const { bg, accent, text } = stickyNoteColor(severity,status);
@@ -365,10 +366,10 @@ function makeStickyNote(item: FeedbackItem, x: number, y: number): StickyNoteDat
     frame.appendChild(bar);
 
     const headText = figma.createText();
-    headText.fontName = { famly: 'Inter', style: 'Bold' },
+    headText.fontName = { family: 'Inter', style: 'Bold' },
     headText.fontSize = 10;
     headText.fills = [{ type: 'SOLID', color: { r: 0.4, g: 0.4, b: 0.4 } }];
-    headText.characters = `${severityLabel(severity)} ${severity.toUpperCase()}  \u2022  ${item.category}`;
+    headText.characters = `${severitylabel(severity)} ${severity.toUpperCase()}  \u2022  ${item.category}`;
     headText.x = 12;
     headText.y = 8;
     frame.appendChild(headText);
@@ -443,7 +444,7 @@ const severity = frame.getPluginData('severity') || 'change request';
 frame.setPluginData('status',status);
 
 const { bg, accent } = stickyNoteColor(severity,status);
-frame.fills = [{ type: 'SOLID', color: accent }];
+frame.fills = [{ type: 'SOLID', color: bg }];
 
 barNode.fills = [{ type: 'SOLID', color: accent }];
 
@@ -469,7 +470,7 @@ switch (msg.type) {
 const profile = getDesignProfile();
 const items = generateFeedback(profile);
 createAnnotations(items);
-broadcastItems();
+broadcastItem();
  const frames = Array.from(placedNodes.values()).map(d => d.frame).filter(f => !f.removed);
 if (frames.length > 0) figma.viewport.scrollAndZoomIntoView(frames);
  break;
@@ -483,13 +484,13 @@ if (frames.length > 0) figma.viewport.scrollAndZoomIntoView(frames);
 case 'address': {
     const data = placedNodes.get(msg.id!);
           if (data && !data.frame.removed) updateStickyVisual(data, 'addressed');
-          broadcastItems();
+          broadcastItem();
           break;
         }
     case 'readdress': {
         const data = placedNodes.get(msg.id!);
         if (data && !data.frame.removed) updateStickyVisual(data, 'active');
-        broadcastItems();
+        broadcastItem();
         break;
     }
     case 'close': {
