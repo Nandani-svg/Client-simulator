@@ -439,7 +439,29 @@ function createAnnotations(items: FeedbackItem[]): void {
                       }
                     }
 
-function broadcastItem(): void {
+ function updateStickyVisual(data: StickyNoteData, status: string): void {
+const { frame,barNode, textNode } = data;
+const severity = frame.getPluginData('severity') || 'change request';
+frame.setPluginData('status',status);
+
+const { bg, accent } = stickyNoteColor(severity,status);
+frame.fills = [{ type: 'SOLID', color: accent }];
+
+barNode.fills = [{ type: 'SOLID', color: accent }];
+
+ if (status === 'dismissed') {
+    textNode.fills = [{ type: 'SOLID', color: { r: 0.5, g: 0.5, b: 0.5 } }];
+    textNode.characters = '\u{1F6AB} [Dismissed] ' + frame.getPluginData('text');
+  } else if (status === 'addressed') {
+    textNode.fills = [{ type: 'SOLID', color: { r: 0.3, g: 0.5, b: 0.3 } }];
+    textNode.characters = '\u{2705} [Addressed] ' + frame.getPluginData('text');
+  } else {
+    textNode.fills = [{ type: 'SOLID', color: { r: 0.15, g: 0.15, b: 0.15 } }];
+    textNode.characters = frame.getPluginData('text');
+  }
+}
+
+                    function broadcastItem(): void {
     const items: FeedbackItem[] = [];
     for (const [id,data] of placedNodes) {
         const frame = data.frame;
