@@ -461,7 +461,47 @@ barNode.fills = [{ type: 'SOLID', color: accent }];
   }
 }
 
-                    function broadcastItem(): void {
+figma.showUi(__html__, { width: 380, height: 600, themeColors: true });
+
+figma.ui.onmessage = async (msg: { type: string; id?: string }) => {
+switch (msg.type) {
+   case 'generate': {
+    await ensureFonts();
+    clearAnnotations();
+const profile = getDesignProfile();
+const items = generateFeedback(profile);
+createAnnotations(items);
+broadcastItems();
+ const frames = Array.from(placedNodes.values()).map(d => d.frame).filter(f => !f.removed);
+if (frames.length > 0) figma.viewport.scrollAndZoomIntoView(frames);
+ break;
+   }
+  case 'dismiss': {
+     const data = placedNodes.get(msg.id!)
+      if (data && !data.frame.removed) updateStickyVisual(data, 'dismissed');
+   broadcastItem();
+   break;
+  }
+case 'address': {
+    const data = placedNodes.get(msg.id!);
+          if (data && !data.frame.removed) updateStickyVisual(data, 'addressed');
+          broadcastItems();
+          break;
+        }
+    case 'readdress': {
+        const data = placedNodes.get(msg.id!);
+        if (data && !data.frame.removed) updateStickyVisual(data, 'active');
+        broadcastItems();
+        break;
+    }
+    case 'close': {
+         figma.closePlugin();
+             break;
+           }
+         }
+       }; 
+
+function broadcastItem(): void {
     const items: FeedbackItem[] = [];
     for (const [id,data] of placedNodes) {
         const frame = data.frame;
