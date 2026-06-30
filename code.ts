@@ -444,26 +444,24 @@ function makeStickyNote(item: FeedbackItem, x: number, y: number): StickyNoteDat
     }
 
     function clearAnnotations(): void {
-     
         for (const { frame } of placedNodes.values()) {
             if (!frame.removed) frame.remove();
         }
         placedNodes.clear();
-    }
 
-   const orphans: SceneNode[] = [];
-for (const child of figma.currentPage.children) {
+        const orphans: SceneNode[] = [];
+        for (const child of figma.currentPage.children) {
             if (child.type === 'FRAME' && child.getPluginData('type') === 'client-feedback') {
-orphans.push(child);
+                orphans.push(child);
             }
-  if (child.type === 'LINE' && child.getPluginData('feedbackId')) {
-orphans.push(child);
-  }
-}
-for (const node of orphans) {
-node.remove();
-}
-}
+            if (child.type === 'LINE' && child.getPluginData('feedbackId')) {
+                orphans.push(child);
+            }
+        }
+        for (const node of orphans) {
+            node.remove();
+        }
+    }
 
 function createAnnotations(items: FeedbackItem[]): void {
     const start = getStartPosition();
@@ -490,16 +488,18 @@ function createAnnotations(items: FeedbackItem[]): void {
                         line.resize(len, 0);
                         line.rotation = -(Math.atan2(dy, dx) * 180) / Math.PI;
                         line.strokeWeight = 1;
-                          line.strokes = [{ type: 'SOLID', color: { r: 1, g: 0.6, b: 0 }, opacity: 0.3 }];
-                           line.name = `connector_${item.id}`;
-                           line.setPluginData('feedbackId', item.id);
-                    }  
-                          }
-                        }
-                    
-                        placedNodes.set(item.id, data);
-                      }
+                        line.strokes = [{ type: 'SOLID', color: { r: 1, g: 0.6, b: 0 }, opacity: 0.3 }];
+                        line.name = `connector_${item.id}`;
+                        line.setPluginData('feedbackId', item.id);
                     }
+                }
+            }
+        }
+
+        placedNodes.set(item.id, data);
+    }
+}
+
 
  function updateStickyVisual(data: StickyNoteData, status: string): void {
 const { frame,barNode, textNode } = data;

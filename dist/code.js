@@ -8,17 +8,20 @@ function rgToHex(c) {
     const b = Math.round(c.b * 255).toString(16).padStart(2, '0');
     return `#${r}${g}${b}`.toUpperCase();
 }
+function collectNodes(node, result) {
+    result.push(node);
+    if ('children' in node) {
+        for (const child of node.children) {
+            collectNodes(child, result);
+        }
+    }
+}
 function getDesignProfile() {
     const selection = figma.currentPage.selection;
     const allNodes = [];
     const source = selection.length > 0 ? selection : figma.currentPage.children;
     for (const node of source) {
-        allNodes.push(node);
-        if ('children' in node) {
-            for (const child of node.children) {
-                allNodes.push(child);
-            }
-        }
+        collectNodes(node, allNodes);
     }
     const profile = {
         hasLogo: false,
@@ -224,8 +227,38 @@ const feedbackGenerators = [
     }),
     () => ({
         id: uid(), text: 'Dave in sales wants the opposite of what marketing said. Can you make it work for both?',
-        category: 'Confliciting Feedback', severity: 'panic',
+        category: 'Conflicting Feedback', severity: 'panic',
     }),
+    () => ({
+        id: uid(), text: 'I showed this to my wife and she said it looks "too corporate." Can we make it more fun?',
+        category: 'Unsolicited Opinion', severity: 'nitpick',
+    }),
+    (p) => {
+        if (p.hasGradients) {
+            return {
+                id: uid(), text: 'The gradients feel very 2018. Can we go flat? Actually wait, gradients are back. Keep them. No, remove them.',
+                category: 'Trends', severity: 'change request',
+            };
+        }
+        return null;
+    },
+    () => ({
+        id: uid(), text: 'Can we see 3 more variations by end of day? Just want to explore options. No pressure.',
+        category: 'Scope Creep', severity: 'panic',
+    }),
+    () => ({
+        id: uid(), text: 'Love it! But can we change everything? The layout, colors, fonts, and copy. Otherwise, perfect.',
+        category: 'Mixed Signals', severity: 'panic',
+    }),
+    (p) => {
+        if (p.hasMultiplePages) {
+            return {
+                id: uid(), text: 'Why are there so many pages? Can we consolidate everything into one scrolling page?',
+                category: 'Navigation', severity: 'change request'
+            };
+        }
+        return null;
+    },
 ];
 function generateFeedback(profile) {
     const items = [];
@@ -280,49 +313,63 @@ function getStartPosition() {
 }
 const loadedFonts = { regular: false, bold: false };
 async function ensureFonts() {
-    if (!loadedFonts.regular) {
-        await figma.loadFontAsync({ family: 'Inter', style: 'Regular' });
-        loadedFonts.regular = true;
+    try {
+        if (!loadedFonts.regular) {
+            await figma.loadFontAsync({ family: 'Inter', style: 'Regular' });
+            loadedFonts.regular = true;
+        }
+        if (!loadedFonts.bold) {
+            await figma.loadFontAsync({ family: 'Inter', style: 'Bold' });
+            loadedFonts.bold = true;
+        }
     }
-    if (!loadedFonts.bold) {
-        await figma.loadFontAsync({ family: 'Inter', style: 'Bold' });
-        loadedFonts.bold = true;
+    catch (e) {
+        figma.notify('⚠️ Could not load Inter font. Please ensure it is available.', { error: true });
+        throw e;
     }
 }
 const placedNodes = new Map();
 function makeStickyNote(item, x, y) {
-    const noteW = 220, noteH = 120;
+    const noteW = 220;
     const severity = item.severity || 'change request';
     const status = item.status || 'active';
     const frame = figma.createFrame();
     frame.name = item.id;
     frame.x = x;
     frame.y = y;
-    frame.resize(noteW, noteH);
+    frame.resize(noteW, 120);
     frame.cornerRadius = 8;
+    frame.layoutMode = 'VERTICAL';
+    frame.primaryAxisSizingMode = 'AUTO';
+    frame.counterAxisSizingMode = 'FIXED';
+    frame.paddingTop = 8;
+    frame.paddingBottom = 12;
+    frame.paddingLeft = 12;
+    frame.paddingRight = 12;
+    frame.itemSpacing = 6;
     const { bg, accent, text } = stickyNoteColor(severity, status);
     frame.fills = [{ type: 'SOLID', color: bg }];
     frame.strokeWeight = 0;
     const bar = figma.createRectangle();
-    bar.resize(4, noteH);
+    bar.layoutPositioning = 'ABSOLUTE';
+    bar.x = 0;
+    bar.y = 0;
+    bar.resize(4, 120);
+    bar.constraints = { horizontal: 'MIN', vertical: 'STRETCH' };
     bar.fills = [{ type: 'SOLID', color: accent }];
     bar.cornerRadius = 0;
     frame.appendChild(bar);
     const headText = figma.createText();
-    headText.fontName = { family: 'Inter', style: 'Bold' },
-        headText.fontSize = 10;
+    headText.fontName = { family: 'Inter', style: 'Bold' };
+    headText.fontSize = 10;
     headText.fills = [{ type: 'SOLID', color: { r: 0.4, g: 0.4, b: 0.4 } }];
     headText.characters = `${severitylabel(severity)} ${severity.toUpperCase()}  \u2022  ${item.category}`;
-    headText.x = 12;
-    headText.y = 8;
     frame.appendChild(headText);
     const body = figma.createText();
     body.fontName = { family: 'Inter', style: 'Regular' };
     body.fontSize = 11;
     body.fills = [{ type: 'SOLID', color: text }];
     body.characters = item.text;
-    body.x = 12;
-    body.y = 28;
     body.resize(noteW - 24, 80);
     body.textAutoResize = 'HEIGHT';
     frame.appendChild(body);
@@ -342,6 +389,18 @@ function clearAnnotations() {
             frame.remove();
     }
     placedNodes.clear();
+    const orphans = [];
+    for (const child of figma.currentPage.children) {
+        if (child.type === 'FRAME' && child.getPluginData('type') === 'client-feedback') {
+            orphans.push(child);
+        }
+        if (child.type === 'LINE' && child.getPluginData('feedbackId')) {
+            orphans.push(child);
+        }
+    }
+    for (const node of orphans) {
+        node.remove();
+    }
 }
 function createAnnotations(items) {
     const start = getStartPosition();
@@ -362,12 +421,14 @@ function createAnnotations(items) {
                     const dx = endX - line.x;
                     const dy = endY - line.y;
                     const len = Math.sqrt(dx * dx + dy * dy);
-                    line.resize(len, 0);
-                    line.rotation = (Math.atan2(dy, dx) * 180) / Math.PI;
-                    line.strokeWeight = 1;
-                    line.strokes = [{ type: 'SOLID', color: { r: 1, g: 0.6, b: 0 }, opacity: 0.3 }];
-                    line.name = `connector_${item.id}`;
-                    line.setPluginData('feedbackId', item.id);
+                    if (len > 1) {
+                        line.resize(len, 0);
+                        line.rotation = -(Math.atan2(dy, dx) * 180) / Math.PI;
+                        line.strokeWeight = 1;
+                        line.strokes = [{ type: 'SOLID', color: { r: 1, g: 0.6, b: 0 }, opacity: 0.3 }];
+                        line.name = `connector_${item.id}`;
+                        line.setPluginData('feedbackId', item.id);
+                    }
                 }
             }
         }
@@ -432,6 +493,19 @@ figma.ui.onmessage = async (msg) => {
         }
         case 'close': {
             figma.closePlugin();
+            break;
+        }
+        case 'clear': {
+            clearAnnotations();
+            broadcastItem();
+            break;
+        }
+        case 'dismiss-all': {
+            for (const data of placedNodes.values()) {
+                if (!data.frame.removed)
+                    updateStickyVisual(data, 'dismissed');
+            }
+            broadcastItem();
             break;
         }
     }
