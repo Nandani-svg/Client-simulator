@@ -16,4 +16,4 @@ Each sticky note has Connector Line drawn back to element it review, so you will
 
 1. Download this repo, then run `npm install` and `npm build` in project folder terminal
 2. In figma desktop: **Plugins -> Development -> Import plugin from manifest**, then select `manifest.json`.
-3.Select part of your design and click on **Generate Feedback**
+3. Select part of your design and click on **Generate Feedback**
